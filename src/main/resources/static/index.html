@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Demo</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+    <style>
+        #map {
+            margin-top: 100px;
+            height: 600px;
+        }
+    </style>
+</head>
+<body>
+<h1>サービスステーション検索</h1>
+<div id="map"></div>
+<p><label for="limit">表示件数: </label><input id="limit" type="number" value="20"></p>
+<div id="result"></div>
+<script>
+    function initMap() {
+        const map = new google.maps.Map(document.getElementById("map"), {
+            zoom: 16,
+            center: {
+                // 皇居
+                lat: 35.6769883,
+                lng: 139.7588499
+            },
+        });
+        const infoWindow = new google.maps.InfoWindow();
+        const markers = [];
+        map.addListener("click", async (event) => {
+            const position = event.latLng;
+            const limit = document.getElementById('limit').value;
+            const locations = await fetch(`/servicelocations?limit=${limit}&offset=0&latitude=${position.lat()}&longitude=${position.lng()}`)
+                .then(res => res.json())
+                .then(json => json.map(data => {
+                    return {
+                        lat: data.latitude,
+                        lng: data.longitude,
+                        address: data.address
+                    }
+                }));
+            const center = {
+                lat: locations.map(x => x.lat).reduce((x, y) => x + y, 0) / locations.length,
+                lng: locations.map(x => x.lng).reduce((x, y) => x + y, 0) / locations.length,
+            };
+            map.setCenter(center);
+            markers.forEach(m => m.setMap(null));
+            locations.forEach(location => {
+                const marker = new google.maps.Marker({
+                    position: location,
+                    title: location.address,
+                    icon: {
+                        url: './images/ss.svg',
+                        scaledSize: {
+                            height: 32,
+                            width: 32
+                        }
+                    },
+                    animation: google.maps.Animation.DROP,
+                    map
+                });
+                marker.addListener('click', () => {
+                    infoWindow.close();
+                    infoWindow.setContent(marker.getTitle());
+                    infoWindow.open(marker.getMap(), marker);
+                });
+                markers.push(marker);
+                return marker;
+            });
+            document.getElementById('result').innerHTML = `
+<h2>緯度:${position.lat()} 経度:${position.lng()} 周辺のサービスステーション</h2>
+<table>
+<thead>
+<tr><th>緯度</th><th>経度</th><th>住所</th></tr>
+</thead>
+<tbody>
+${locations.map(location => `<tr><td>${location.lat}</td><td>${location.lng}</td><td>${location.address}</td></tr>`).join('')}
+</tbody>
+</table>
+`;
+        });
+    }
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initMap&v=weekly&channel=2"
+        async></script>
+</body>
+</html>
