@@ -26,7 +26,7 @@ public class KsjController {
 
 	// https://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P07.html
 	// のP07-**_**.xml
-	// curl http://localhost:8080/ksj -F file=@P07-10_13.xml -v
+	// curl http://localhost:8080/ksj -F file=@./P07-10_13/P07-10_13.xml -v
 	@PostMapping(path = "ksj")
 	public Map<String, Object> bulkImport(@RequestParam(name = "file") MultipartFile file) throws IOException {
 		final List<ServiceLocation> serviceLocations = this.ksjLoader.load(file.getInputStream()).stream()

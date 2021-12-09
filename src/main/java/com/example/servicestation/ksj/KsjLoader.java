@@ -31,14 +31,24 @@ public class KsjLoader {
 			final XMLStreamReader reader = factory.createXMLStreamReader(stream);
 			try {
 				Ksj ksj = new Ksj();
+				String prefix = null;
 				for (; reader.hasNext(); reader.next()) {
 					final int eventType = reader.getEventType();
 					if (eventType == XMLStreamConstants.START_ELEMENT) {
 						final QName name = reader.getName();
 						final String localPart = name.getLocalPart();
+						if (localPart.equals("CI_Citation.title") && prefix == null) {
+							reader.next();
+							if (reader.getEventType() == XMLStreamConstants.CHARACTERS) {
+								final String title = reader.getText();
+								if (title.contains("xml")) {
+									prefix = title.replace("xml", "");
+								}
+							}
+						}
 						if (localPart.equals("GM_Point")) {
 							final String id = reader.getAttributeValue(null, "id");
-							ksj.setId(id);
+							ksj.setId(prefix + id);
 						}
 						else if (localPart.equals("DirectPosition.coordinate")) {
 							reader.next();
@@ -54,7 +64,7 @@ public class KsjLoader {
 						}
 						else if (localPart.equals("POS")) {
 							final String id = reader.getAttributeValue(null, "idref");
-							ksj = ksjMap.get(id);
+							ksj = ksjMap.get(prefix + id);
 						}
 						else if (localPart.equals("ADS")) {
 							reader.next();
@@ -81,7 +91,7 @@ public class KsjLoader {
 
 //	public static void main(String[] args) throws Exception {
 //		final String xmlFile = "/Users/toshiaki/Downloads/spring-fest/P07-10_13/P07-10_13.xml";
-//		new KsjLoader().load(new FileInputStream(xmlFile))
+//		new KsjLoader().load(new java.io.FileInputStream(xmlFile))
 //				.forEach(System.out::println);
 //	}
 }
